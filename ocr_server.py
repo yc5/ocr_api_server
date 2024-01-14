@@ -4,7 +4,7 @@ import base64
 import json
 
 import ddddocr
-from flask import Flask, request
+from flask import Flask, request, make_response
 
 parser = argparse.ArgumentParser(description="使用ddddocr搭建的最简api服务")
 parser.add_argument("-p", "--port", type=int, default=9898)
@@ -63,6 +63,12 @@ class Server(object):
 
 server = Server(ocr=args.ocr, det=args.det, old=args.old)
 
+def _build_cors_preflight_response():
+    response = make_response()
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers.add("Access-Control-Allow-Methods", "*")
+    return response
 
 def get_img(request, img_type='file', img_name='image'):
     if img_type == 'b64':
@@ -88,12 +94,14 @@ def set_ret(result, ret_type='text'):
         if isinstance(result, Exception):
             return ''
         else:
-            return str(result).strip()
+            return (str(result).strip(),{"Access-Control-Allow-Origin": "*"})
 
 
-@app.route('/<opt>/<img_type>', methods=['POST'])
-@app.route('/<opt>/<img_type>/<ret_type>', methods=['POST'])
+@app.route('/<opt>/<img_type>', methods=['POST', 'OPTIONS'])
+@app.route('/<opt>/<img_type>/<ret_type>', methods=['POST', 'OPTIONS'])
 def ocr(opt, img_type='file', ret_type='text'):
+    if request.method == "OPTIONS": # CORS preflight
+        return _build_cors_preflight_response()
     try:
         img = get_img(request, img_type)
         if opt == 'ocr':
