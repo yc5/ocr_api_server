@@ -61,7 +61,7 @@ class Server(object):
         else:
             raise Exception(f"不支持的滑块算法类型: {algo_type}")
 
-server = Server(ocr=args.ocr, det=args.det, old=args.old)
+server = Server(ocr=not args.ocr, det=args.det, old=args.old) if all([not args.ocr, not args.det]) else Server(ocr=args.ocr, det=args.det, old=args.old)
 
 def _build_cors_preflight_response():
     response = make_response()
